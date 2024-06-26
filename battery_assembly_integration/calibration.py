@@ -1,40 +1,65 @@
 import numpy as np
 
-# setup a listener and talker with vision
 
-# ask for point one camera
+def forward_kinematics(theta1, theta2, theta3, theta4, theta5, theta6):
+    # DH parameters
+    d = [0.1625, 0, 0, 0.1333, 0.0997, 0.0996]
+    a = [0, -0.425, -0.3922, 0, 0, 0]
+    alpha = [np.pi/2, 0, 0, np.pi/2, -np.pi/2, 0]
+    
+    # Base transformation matrix
+    T = np.eye(4)
+    
+    # Calculate transformation matrices for each joint
+    for i in range(6):
+        theta = [theta1, theta2, theta3, theta4, theta5, theta6][i]
+        
+        ct = np.cos(theta)
+        st = np.sin(theta)
+        ca = np.cos(alpha[i])
+        sa = np.sin(alpha[i])
+        
+        A = np.array([
+            [ct, -st*ca, st*sa, a[i]*ct],
+            [st, ct*ca, -ct*sa, a[i]*st],
+            [0, sa, ca, d[i]],
+            [0, 0, 0, 1]
+        ])
+        
+        T = np.dot(T, A)
+    
+    # Extract position and orientation from the final transformation matrix
+    position = T[:3, 3]
+    orientation = T[:3, :3]
+    
+    return T
 
-# wait for user to enter tcp one
+# Calculate forward kinematics of the ur5e
+theta1, theta2, theta3, theta4, theta5, theta6 = np.deg2rad(-92), np.deg2rad(-99), np.deg2rad(-126), np.deg2rad(-46), np.deg2rad(91), np.deg2rad(-2)  # Joint angles in radians
+T_b_ee = forward_kinematics(theta1, theta2, theta3, theta4, theta5, theta6)
 
-# ask for point two camera
+T_c = np.array([
+    [0.00000000e+00, 9.99941254e-01, -1.08392132e-02, -4.14540947e+00],
+    [-7.60767771e-01, 7.03491157e-03, 6.48986062e-01, 2.48201868e+02],
+    [6.49024190e-01, 8.24612407e-03, 7.60723079e-01, 2.90935199e+02],
+    [0.00000000e+00, 0.00000000e+00, 0.00000000e+00, 1.00000000e+00]
+])
 
-# wait for user to enter tcp value two
+# Rotation matrix from end effector to camera
+R_ee_c = np.transpose(T_c[:3, :3])
+# Calculate the inverse of 
+# the translation vector for end effector to camera
+t_ee_c = np.dot(-R_ee_c, T_c[:3, 3])
+# Compose the inverse transformation matrix from end-effector to camera
+T_ee_c = np.eye(4,4)
+T_ee_c[:3, :3] = R_ee_c
+T_ee_c[:3, 3] = t_ee_c
 
-# set min and max values
-
-# min and max values for camera measurements
-c_camera_min = np.array([50.5, -2.5, 505])
-c_camera_max = np.array([60.5, -12.5, 515])
-
-# min and max values of tcp (ur5e)
-tcp_ee_min = np.array([-551.55, -64.85, 105.49])
-tcp_ee_max = np.array([-461.55, -63.85, 215.49])
-
-# Map a single value range onto another
-def map_value(min_one, max_one, min_two, max_two, original_value):
-    return (((original_value - min_one) * (max_two - max_one)) / (max_one - min_one)) + min_two
-
-# scale a 3d vector using map function
-def scale_to_arm(p_camera):
-    return np.array([
-        map_value(c_camera_min[0], c_camera_max[0], tcp_ee_min[0], tcp_ee_max[0], p_camera[0]),
-        map_value(c_camera_min[1], c_camera_max[1], tcp_ee_min[1], tcp_ee_max[1], p_camera[1]),
-        map_value(c_camera_min[2], c_camera_max[2], tcp_ee_min[2], tcp_ee_max[2], p_camera[2]),
-    ])
+# the transformation matrix for the baseplate of the robot to the camera is
+# the transformation from baseplate to end-effector x end-effector to camera
+T_b_c = np.dot(T_b_ee, T_ee_c)
 
 
-# test values
-c_camera = c_camera_min
-
-original_point = scale_to_arm(c_camera)
-print(original_point)
+print("Base plate to end-effector transformation:\n", T_b_ee)
+print("End-effector to camera transformation:\n", T_ee_c)
+print("Base plate to camera transformation:\n", T_b_c)
