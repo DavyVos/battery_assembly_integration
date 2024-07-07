@@ -1,9 +1,6 @@
 import numpy as np
 from scipy.spatial.transform import Rotation as R
-import rclpy
-from rclpy.node import Node
 import numpy as np
-from example_interfaces.srv import RequestObject
 
 
 def forward_kinematics(theta1, theta2, theta3, theta4, theta5, theta6):
@@ -108,72 +105,4 @@ T_b_c = calculateRobotArmToCameraTransform()
 # The transformation of the base plate of the robot to the specfied point in the camera
 T_b_p = np.dot(T_b_c, T_c_p)
 
-class ObjectPoseClient(Node):
-
-    def __init__(self):
-        super().__init__('object_pose_client')
-        self.cli = self.create_client(ObjectPose, 'get_object_pose')
-        while not self.cli.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info('service not available, waiting again...')
-        self.req = ObjectPose.Request()
-
-    def send_request(self, object_name):
-        self.req.object_name = object_name
-        self.future = self.cli.call_async(self.req)
-        rclpy.spin_until_future_complete(self, self.future)
-        return self.future.result()
-
-def main(args=None):
-    rclpy.init(args=args)
-
-    object_pose_client = ObjectPoseClient()
-    object_name = "example_object"
-    
-    response = object_pose_client.send_request(object_name)
-
-    if response.success:
-        transform_matrix = np.array(response.transformation_matrix).reshape(4, 4)
-        object_pose_client.get_logger().info(f'Received transformation matrix for {object_name}:')
-        object_pose_client.get_logger().info(f'\n{transform_matrix}')
-    else:
-        object_pose_client.get_logger().warn(f'Failed to get pose: {response.message}')
-
-    object_pose_client.destroy_node()
-    rclpy.shutdown()
-
-if __name__ == '__main__':
-    main()class ObjectPoseClient(Node):
-
-    def __init__(self):
-        super().__init__('object_pose_client')
-        self.cli = self.create_client(ObjectPose, 'get_object_pose')
-        while not self.cli.wait_for_service(timeout_sec=1.0):
-            self.get_logger().info('service not available, waiting again...')
-        self.req = ObjectPose.Request()
-
-    def send_request(self, object_name):
-        self.req.object_name = object_name
-        self.future = self.cli.call_async(self.req)
-        rclpy.spin_until_future_complete(self, self.future)
-        return self.future.result()
-
-def main(args=None):
-    rclpy.init(args=args)
-
-    object_pose_client = ObjectPoseClient()
-    object_name = "example_object"
-    
-    response = object_pose_client.send_request(object_name)
-
-    if response.success:
-        transform_matrix = np.array(response.transformation_matrix).reshape(4, 4)
-        object_pose_client.get_logger().info(f'Received transformation matrix for {object_name}:')
-        object_pose_client.get_logger().info(f'\n{transform_matrix}')
-    else:
-        object_pose_client.get_logger().warn(f'Failed to get pose: {response.message}')
-
-    object_pose_client.destroy_node()
-    rclpy.shutdown()
-
-if __name__ == '__main__':
-    main()
+calculateRobotArmToCameraTransform()
