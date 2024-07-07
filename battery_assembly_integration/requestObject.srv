@@ -1,0 +1,11 @@
+# ObjectPose.srv
+
+# Request
+string object_name
+
+---
+
+# Response
+float64[16] transformation_matrix
+bool success
+string message
