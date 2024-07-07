@@ -20,6 +20,8 @@ setup(
     tests_require=['pytest'],
     entry_points={
         'console_scripts': [
+            'integration = battery_assembly_integration.integration:main',
+            'calibration = battery_assembly_integration.calibration:main',
         ],
     },
 )
